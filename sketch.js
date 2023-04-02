@@ -1,17 +1,16 @@
-let bps;
+document.body.style.backgroundColor = "white";
+let darkmodeToggle=false;
+let smallballtoggle=false;
 let outlierconst = 0.07;
 let newr = []
 let ravg = 9999;
 let alpha = 255;
-let secretfunction = true;
-let ballcolor = true;
-let show = true;
+let show = false;
 let oldx
 let oldy;
 let lastpicktime = 0;
 let ballsHS = 0;
 let reactionHS = 9999;
-let bpsHS = 0;
 let eatenHS = 0;
 let maxepsHS = 0;
 let PRESSURE = 60;
@@ -25,7 +24,7 @@ let overall = 0;
 let EPSRANGE = 5;
 let W = 800;
 let H = 800;
-let BALLSIZE = 30;
+let BALLSIZE = 60;
 let CURSORSIZE = 30;
 let time;
 let score;
@@ -43,17 +42,17 @@ let balance = 0;
 let bestEPS = 0;
 let noCheese = false;
 
-let timesEat = []
-let costEat = []
+let timesEat = [];
+let costEat = [];
 
 let TARGETCOLOR;
 let BACKGROUNDCOLOR;
 let MOUSECOLOR;
-let BLACK;
+let WHITE;
 
 let eatsound;
 
-let newCursor=true;
+let newCursor=false;
 
 function gameSetup()
 { 
@@ -72,12 +71,10 @@ function gameSetup()
   noCheese = false;
   timesEat.splice(0,timesEat.lenght);
   costEat.splice(0,costEat.lenght);
-  //while (reactions.length) { reactions.pop(); }
   reactions.length = 0;
   bestEPS = 0;
   lasttime = 0;
 }
-
 
 function preload()
 {	
@@ -97,15 +94,6 @@ function preload()
    {
     maxepsHS = getItem(3)/1000;
    }
-  if (getItem(4) != null)
-   {
-    bpsHS = getItem(4)/1000;
-    /* if (bpsHS !== bpsHS) //NAN check
-     {
-       bpsHS = 0;
-     }*/
- 
-   }
   if (getItem(5) != null)
    {
     reactionHS = int(getItem(5));
@@ -121,13 +109,8 @@ function preload()
 let cnv;
 let ctx;
 function setup() {
-  frameRate(1000);
-  TARGETCOLOR = color(255,0,0);
-  BACKGROUNDCOLOR = color(7,7,7);
-  MOUSECOLOR = color(255,255,255);
-  BLACK = color(0,0,0);
-	
-console.log('new2');
+  frameRate(3000);
+	objectColors();
   createCanvas(W, H);
   cnv = document.getElementById('defaultCanvas0');
   ctx = cnv.getContext('2d', { 
@@ -136,12 +119,20 @@ console.log('new2');
 });
 
 	document.oncontextmenu = function() { return false; }
-  document.onmousedown   = function() { return false; }
-  cursor('cursor.cur', 32, 32);//noCursor();
   textSize(30);
   textAlign(CENTER,CENTER);
   
   gameSetup();
+}
+
+function objectColors() {
+  TARGETCOLOR = color(0,0,0);
+  if (darkmodeToggle) TARGETCOLOR = color(255,255,255);
+  BACKGROUNDCOLOR = color(255,255,255);
+  if (darkmodeToggle) BACKGROUNDCOLOR = color(0,0,0);
+  MOUSECOLOR = color(0,0,0);
+  if (darkmodeToggle) MOUSECOLOR = color(255,255,255);
+  WHITE = (255,255,255);
 }
 
 function draw() {
@@ -156,51 +147,46 @@ function draw() {
  }
  else //gameover
  {
-   background(BLACK);
+   background(WHITE);
+   if (darkmodeToggle) background(0,0,0);
    setHighScores();
-   makeGraph();
-   gameOverText();
-   
+   if (newTime>0) makeGraph();
+   if (newTime>0) gameOverText();
 }
-  
   
   function makeGraph()
   {
+    let max_of_array = Math.max.apply(Math, reactions);
+    let min_of_array = Math.min.apply(Math, reactions);
+    let xup = W/20;
+    let yup = H/20;
+    let height = H/2.8;
+    let width = 9*W/10;
+    let step = width/(reactions.length-1);
+    if (darkmodeToggle) fill(WHITE);
+    verticalnums = 7;
     
-         let max_of_array = Math.max.apply(Math, reactions);
-         let min_of_array = Math.min.apply(Math, reactions);
-         let xup = W/20;
-         let yup = H/20;
-         let height = H/3;
-         let width = W-W/20-W/20;
-         let step = width/reactions.length;
-         //fill(10,100,0);
-         //rect(xup, yup, width, height);
-         fill(0,255,200);
-         verticalthing = 7;
-         
-         let dist = max_of_array-min_of_array;
-         for (let j = 0; j<verticalthing;j++)
-         {
-           textSize(20);
-           text((min_of_array+j*(dist/verticalthing)).toFixed(0),W/25,((verticalthing-j)/verticalthing)*height + 20);
-         }
-    
-         textSize(30);
-         let last = 0;
-         strokeWeight(3);
-         stroke(250,150,200);
+    let dist = (max_of_array-min_of_array);
+    for (let j = 0; j<verticalnums;j++)
+    {
+      textSize(30);
+      text((min_of_array+j*(dist/(verticalnums))).toFixed(0),W/25,((verticalnums+-1.04*j)/(verticalnums))*height + 36);
+    }
+    let last = 0;
+    strokeWeight(4);
     	for (let i=0; i<reactions.length; i++) 
         {
           let balanced_i = map(reactions[i], min_of_array, max_of_array, 0, H/3);
           if (i>0)
           {
-		    line(i*step + xup, last, (i+1)*step+xup, height+yup - balanced_i);
+            line((i-1)*step + xup, last, i*step+xup, height+yup - balanced_i);
           }
 		  last = height+yup - balanced_i;
 	    }
-         strokeWeight(1);
-         stroke(0,0,0);
+      strokeWeight(0);
+      if (darkmodeToggle) stroke(WHITE);
+      else stroke(0,0,0);
+      
   }
 function timeAndPressure(noCheese)
 {
@@ -235,8 +221,6 @@ function setHighScores()
      storeItem(3, 1000*maxepsHS);
    }
    
-  
-  
    newr.length = 0;
    for (let i = 0;i<=reactions.length-1;i++)
    {
@@ -257,24 +241,11 @@ function setHighScores()
      ravg = 9999;
    }
   
-   bps = 1/(ravg/1000);
-  
-  if(newTime > 2 && ballcounter > 2)
-     {
-     if (bps > bpsHS)
-     {
-
-         bpsHS = bps; 
-         storeItem(4, 1000*bpsHS);
-     }
-   }
-  
    if (ravg < reactionHS)
    {
      reactionHS = ravg;
      storeItem(5, reactionHS);
    }
-  
   
   if (ballcounter > ballsHS)
   {
@@ -283,74 +254,53 @@ function setHighScores()
   }
 }
 
-  
 function gameOverText()
 {
-   
-  
- 
-  
-   fill(255,0,50);
+   fill(0,0,0);
+   if (darkmodeToggle) fill(WHITE);
    textSize(55);
    textStyle(BOLD);
    text("GAME OVER", W/2, H/2);   
-   textSize(25);
+   textSize(30);
    
    let heightlevel = 22;
    
    let placeleft = 14;
    textAlign(LEFT,CENTER);
    textStyle(BOLD);
-   fill(250,150,200);
   
    text("Stats" ,W/placeleft,H-(H/heightlevel)*9);
-   text("try C B R S keys",W/placeleft, H-(H/heightlevel)*1);
    textStyle(ITALIC);
-   fill(0,255,200);
    text("Time" ,W/placeleft,H-(H/heightlevel)*8);
-   text("Average balls/s" ,W/placeleft,H-(H/heightlevel)*7);
-   text("Average reaction", W/placeleft, H-(H/heightlevel)*6);
-   text("Balls eaten", W/placeleft, H-(H/heightlevel)*5);
-   text("Scores eaten", W/placeleft, H-(H/heightlevel)*4);
-   text("Maximum eat/s", W/placeleft, H-(H/heightlevel)*3);
-   text("Average eat/s", W/placeleft, H-(H/heightlevel)*2);
+   text("React", W/placeleft, H-(H/heightlevel)*7);
+   text("Avg pps", W/placeleft, H-(H/heightlevel)*6);
+   text("Max pps", W/placeleft, H-(H/heightlevel)*5);
    textAlign(CENTER,CENTER);
    
    let placemiddle = 2;
    textStyle(BOLD);
-   fill(250,150,200);
    text("Now",W/placemiddle,H-(H/heightlevel)*9);
-   fill(0,255,200);
    textStyle(NORMAL);
    text((newTime).toFixed(2),W/placemiddle,H-(H/heightlevel)*8); 
-   text(bps.toFixed(2),W/placemiddle,H-(H/heightlevel)*7);
-   text(ravg, W/placemiddle, H-(H/heightlevel)*6);
-   text(ballcounter, W/placemiddle, H-(H/heightlevel)*5);
-   text(overall.toFixed(0), W/placemiddle, H-(H/heightlevel)*4);
-   text(bestEPS.toFixed(0), W/placemiddle, H-(H/heightlevel)*3);
-   text((overall/newTime).toFixed(2), W/placemiddle, H-(H/heightlevel)*2);
+   text(ravg, W/placemiddle, H-(H/heightlevel)*7);
+   text((overall/newTime).toFixed(2), W/placemiddle, H-(H/heightlevel)*6);
+   text(bestEPS.toFixed(0), W/placemiddle, H-(H/heightlevel)*5);
   
    let placeright = 8;
    textStyle(BOLD);
-   fill(250,150,200);
    text("Highscore",W-W/placeright,H-(H/heightlevel)*9);
    textStyle(NORMAL);
-   fill(0,255,200);
    text(highScore.toFixed(2),W-W/placeright,H-(H/heightlevel)*8);
-   text(bpsHS.toFixed(2),W-W/placeright,H-(H/heightlevel)*7);
-   text(reactionHS, W-W/placeright, H-(H/heightlevel)*6);
-   text(ballsHS, W-W/placeright, H-(H/heightlevel)*5);
-   text(eatenHS.toFixed(0), W-W/placeright,H-(H/heightlevel)*4);
-   text(maxepsHS.toFixed(0), W-W/placeright,H-(H/heightlevel)*3); 
-   text(hs_avg.toFixed(2), W-W/placeright,H-(H/heightlevel)*2); 
-   //textAlign(CENTER,CENTER);
-  
+   text(reactionHS, W-W/placeright, H-(H/heightlevel)*7);
+   text(hs_avg.toFixed(2), W-W/placeright,H-(H/heightlevel)*6);
+   text(maxepsHS.toFixed(0), W-W/placeright,H-(H/heightlevel)*5);
+
    textStyle(BOLD);
-   fill(250,150,200);
    textSize(20);
    
-   text("Press H to reset HS",W-W/placeright,H-(H/heightlevel)*1);
-   text("Click anywhere to play",W-W/placemiddle,H-(H/heightlevel)*1);
+   //text("",W-W/placeright,H-(H/heightlevel)*4);
+   text("Space: Play    D: darkMode    E: smallBall    F: ballFade    H:resetHS",W-W/placemiddle,H-(H/heightlevel)*3);
+   //text("",W/placeleft, H-(H/heightlevel)*4);
  }
 }
 
@@ -373,37 +323,11 @@ function textThings()
  
  background(BACKGROUNDCOLOR); 
  
- fill(BLACK);
- rect(W/6,H/6,W-W/3,H-H/3);
+ fill(WHITE);
+ if (darkmodeToggle) fill(0,0,0);
+ //rect(W/6,H/6,W-W/3,H-H/3);
   if(show)
   {
-    
-    
-    if (!ballcolor)
-    {
-      alpha = 100;
-    }
-    else
-    {
-      alpha = 255;
-    }
-   fill(200,255,0, alpha);
-   textSize(20);
-   
-   	text("P", W/4,H/12)
-   	text("E", W/2+W/4,H/12);
-   
-   textSize(25);
-   text(scorePressure.toFixed(0),W/4,H/12+H/20);
-   text(eps.toFixed(0), W/2+W/4, H/12+H/20);
-   fill(0,255,230, alpha);
-   textSize(30);
-   textStyle(BOLD);
-   text("BallSheet by dphdmn",W/2,H-H/12);
-   textSize(25);
-   fill(250,150,200, alpha);
-   text("v6.8 no right click",W/2,H-H/25);
-   
    fill(200-balance,balance*3+150,0, alpha);
    text(balance.toFixed(0),W/2,H-H/7);
    fill(300-score,score*2,0, alpha);
@@ -412,28 +336,22 @@ function textThings()
     
    if (reactions.length>0)
    {
-     textSize(17);
+     textSize(50);
      let r = reactions[reactions.length-1]
-     fill(3*r/20,150-r/20,0, alpha);
-     text(int(r),W/2, H/12+H/18);
+     fill(255,0,0, alpha);
+     if (r<300) fill(255,255,0, alpha);
+     if (r<240) fill(191,255,0, alpha);
+     if (r<220) fill(128,255,0, alpha);
+     if (r<200) fill(64,255,0, alpha);
+     if (r<190) fill(0,255,0, alpha);
+     if (r<180) fill(0,255,64, alpha);
+     if (r<175) fill(0,255,128, alpha);
+     if (r<170) fill(0,255,191, alpha);
+     if (r<166) fill(0,255,255, alpha);
+     text(int(r),W/2, H/2);
      textSize(40);
    }
   }
-  
-if (secretfunction)
-   {	
-	 fill(0,255,230, alpha);
-	 ellipse(W/20,H/20, W/16, W/16); 
-	 fill(0,0,0);
-	 textStyle(BOLD);
-	 text("R",W/20, H/20); 
-
-	 fill(0,255,230, alpha);
-	 ellipse(W-W/20,H/20, W/16, W/16); 
-	 fill(0,0,0);
-	 textStyle(BOLD);
-	 text("S",W-W/20, H/20); 
-   }
 }
 
 function makeEpsBalance()
@@ -450,14 +368,16 @@ function makeEpsBalance()
 function makeBalls()
 {
   fill(MOUSECOLOR);
+  if (darkmodeToggle) fill(WHITE);
  if (!newCursor) {ellipse(mouseX, mouseY, CURSORSIZE, CURSORSIZE);}
-  if (show && ballcolor)
+  if (show)
   {
-    fill(200-balance,balance*3+150,0);
+    fill(0,balance*3+255,0);
   }
   else
   {
-    fill(250,150,200);
+    fill(0,0,0);
+    if (darkmodeToggle) fill(255,255,255);
   }
   ellipse(xpos, ypos, BALLSIZE, BALLSIZE);
 }
@@ -502,7 +422,6 @@ function checkCollision()
     timesEat.push(newTime);
     costEat.push(cost);
     overall += cost;
-     
    }
   lastpicktime = newTime;
   eatsound.play();
@@ -534,7 +453,7 @@ function getEps()
   return sum/EPSRANGE;
 }
 
-function mousePressed()
+function reset()
 {
   if (ingame)
   {
@@ -542,32 +461,19 @@ function mousePressed()
     {
       score=-1;
     }
-    if (dist(mouseX, mouseY, W-W/20,H/20) < W/32)
-    {
-        show = !show;
-    }
-        
-        
   }
   else
   {
     gameSetup();
   }
 }
-function checkCur(){
-	if (newCursor){
-		 cursor('cursor.cur', 32, 32);
-	}
-	else{
-	noCursor();
-	}
-}
 function keyPressed() {
-  if (key === ' ' || key === 'r' || key === 'к') {
+  if (key === ' ') {
+    if (ingame)
     score=-1; 
-    setTimeout(mousePressed, 10);
+    setTimeout(reset, 1);
   }
-  if (key === 'h' || key === 'р')
+  if (key === 'h')
   {
     for (let i = 0; i<=6; i++)
     {
@@ -582,27 +488,25 @@ function keyPressed() {
    maxepsHS = 0;
    eatenHS = 0;
    hs_avg = 0;
-    /*
-   if (!ingame)
-   {
-     gameOverText();
-   }*/
   }
-	if (key === 'o'){
-	newCursor=!newCursor;
-		checkCur();
-	}
-  if (key === 's' || key === 'ы')
+  if (key === 'e')
+  {
+    smallballtoggle=!smallballtoggle;
+    if (smallballtoggle) BALLSIZE=30;
+    else BALLSIZE=60;
+  }
+  if (key === 'f')
   {
     show = !show;
   }
-  if( key === 'b' || key === 'B' || key === 'и' || key === 'И')
+  if (key === 'd')
   {
-	  secretfunction = !secretfunction;
+    darkmodeToggle=!darkmodeToggle;
+    document.body.style.backgroundColor = "white";
+    if(darkmodeToggle) {
+      document.body.style.backgroundColor = "black";
+      background(0,0,0);
+    }
+    objectColors();
   }
-  if (key === 'c' || key === 'C' || key === 'с' || key === 'С')
-  {
-    ballcolor = !ballcolor;
-  }
-  
 }
